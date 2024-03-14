@@ -3,9 +3,14 @@ package com.example.yproject
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -49,12 +54,18 @@ class MainActivity : ComponentActivity() {
                     val cameraPositionState = rememberCameraPositionState{
                         position = defaultCameraPosition
                     }
-
-                    Box (modifier = Modifier .width(300.dp) .height(300.dp)){
-                        GoogleMapView(
-                            modifier = Modifier .fillMaxSize(),
-                            cameraPositionState = cameraPositionState,
-                        )
+                    Column (modifier = Modifier.fillMaxSize() .border(1.dp, Color.Red)){ // Column
+                        Box (modifier = Modifier .fillMaxHeight(0.95f)){
+                            GoogleMapView(
+                                modifier = Modifier .fillMaxSize(),
+                                cameraPositionState = cameraPositionState,
+                            )
+                        }
+                        Row (modifier = Modifier
+                            .fillMaxHeight(0.2f)
+                            .fillMaxWidth()
+                            .background(Color.Black)){
+                        }
                     }
                     }
                 }
@@ -82,7 +93,7 @@ fun GoogleMapView(
     }
 
     GoogleMap(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         onMapLoaded = onMapLoaded,
         uiSettings = mapUiSettings,
         properties = mapProperties,
