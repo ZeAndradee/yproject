@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -54,24 +55,26 @@ class MainActivity : ComponentActivity() {
                     val cameraPositionState = rememberCameraPositionState{
                         position = defaultCameraPosition
                     }
-                    Column (modifier = Modifier.fillMaxSize() .border(1.dp, Color.Red)){ // Column
-                        Box (modifier = Modifier .fillMaxHeight(0.95f)){
+                        Column {
                             GoogleMapView(
-                                modifier = Modifier .fillMaxSize(),
+                                modifier = Modifier.fillMaxHeight(0.90f),
                                 cameraPositionState = cameraPositionState,
                             )
-                        }
-                        Row (modifier = Modifier
-                            .fillMaxHeight(0.2f)
-                            .fillMaxWidth()
-                            .background(Color.Black)){
-                        }
-                    }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth()
+                                    .background(Color.Black)
+                            ) {
+                                Text("Teste")
+                            }
+
                     }
                 }
             }
         }
     }
+}
 
 
 @Composable
@@ -83,12 +86,12 @@ fun GoogleMapView(
 
     var mapUiSettings by remember {
         mutableStateOf(
-            MapUiSettings(compassEnabled = false)
+            MapUiSettings(compassEnabled = false, zoomControlsEnabled = false)
         )
     }
     var mapProperties by remember {
         mutableStateOf(
-            MapProperties(mapType = MapType.TERRAIN)
+            MapProperties(mapType = MapType.NORMAL)
         )
     }
 
