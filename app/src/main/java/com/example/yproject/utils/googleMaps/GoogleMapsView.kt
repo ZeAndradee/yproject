@@ -36,7 +36,6 @@ fun Activity.getLastLocation(callback: (LatLng?) -> Unit) {
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location ->
                 if (location != null) {
-                    // Use a localização aqui
                     var currentPosition = LatLng(location.latitude, location.longitude)
                     Log.d("Location", "Lat: ${location.latitude}, Lon: ${location.longitude}")
                     callback(currentPosition)

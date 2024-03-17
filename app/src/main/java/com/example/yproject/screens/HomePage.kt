@@ -87,6 +87,17 @@ fun HomePage(){
                 currentPosition!!,
                 15f
             )
+        } else {
+            activity.getLastLocation { position ->
+                currentPosition = position
+                isLocationObtained = true
+                if (currentPosition != null) {
+                    cameraPositionState.position = CameraPosition.fromLatLngZoom(
+                        currentPosition!!,
+                        15f
+                    )
+                }
+            }
         }
     }
 
@@ -161,10 +172,16 @@ fun HomePage(){
         floatingActionButton = {
             Column (modifier = Modifier ){
                 FloatingActionButton(onClick = {
-                        cameraPositionState.position = CameraPosition.fromLatLngZoom(
-                        currentPosition ?: LatLng(-8.11799711959781, -34.91363173260206), //OnClick a posição atual do user é definida
-                        15f
-                    )
+                    activity.getLastLocation { position ->
+                        currentPosition = position
+                        isLocationObtained = true
+                        if (currentPosition != null) {
+                            cameraPositionState.position = CameraPosition.fromLatLngZoom(
+                                currentPosition!!,
+                                15f
+                            )
+                        }
+                    }
                 }, shape = RoundedCornerShape(50)) {
                     Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Adicionar Alertas")
                 }
