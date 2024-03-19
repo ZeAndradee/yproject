@@ -39,19 +39,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.createBitmap
 import com.example.yproject.utils.googleMaps.checkAndRequestLocationPermission
 import com.example.yproject.utils.googleMaps.getLastLocation
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 
@@ -73,7 +70,7 @@ fun HomePage(){
     var markers by remember { mutableStateOf(listOf<LatLng>()) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            LatLng(-8.11799711959781, -34.91363173260206), // Use a posição padrão se a posição atual ainda não estiver disponível
+            LatLng(-8.11799711959781, -34.91363173260206),
             15f
         )
     }
@@ -172,18 +169,20 @@ fun HomePage(){
                 }
             }
         },
+        //FloatingActionButton center map
         floatingActionButton = {
             Column (modifier = Modifier ) {
                 FloatingActionButton(onClick = {
                     activity.getLastLocation { position ->
                         currentPosition = position
                         isLocationObtained = true
-                        if (currentPosition != null) {
-                            cameraPositionState.position = CameraPosition.fromLatLngZoom(
-                                currentPosition!!,
-                                15f
-                            )
-                        }
+                    }
+                    currentPosition?.let {
+                        cameraPositionState.position = CameraPosition.fromLatLngZoom(
+                            currentPosition!!,
+                            15f
+                        )
+                        Log.d("Current Location: ", "$currentPosition")
                     }
                 }, shape = RoundedCornerShape(50)) {
                     Icon(
@@ -192,11 +191,20 @@ fun HomePage(){
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                FloatingActionButton(onClick = {
-                    currentPosition?.let {
-                        markers = markers + it
-                    }
 
+                //FloatingActionButton add alerts
+                FloatingActionButton(onClick = {
+                    var repeatPosition = false
+                    markers.forEach { position ->
+                        if (currentPosition == position){
+                            repeatPosition = true
+                        }
+                    }
+                    if (!repeatPosition){
+                        currentPosition?.let {
+                            markers = markers + it
+                        }
+                    }
                 }, shape = RoundedCornerShape(50)) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -211,9 +219,8 @@ fun HomePage(){
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                cameraPositionState = cameraPositionState,
-                currentPosition = currentPosition,
                 markers = markers,
+                cameraPositionState = cameraPositionState,
             ){checkAndRequestLocationPermission(context)
                 }
         }
@@ -224,7 +231,6 @@ fun GoogleMapView(
     modifier: Modifier = Modifier,
     markers: List<LatLng>,
     cameraPositionState: CameraPositionState,
-    currentPosition: LatLng?,
     onMapLoaded: () -> Unit = {},
 ){
 
@@ -252,6 +258,7 @@ fun GoogleMapView(
                 state = rememberMarkerState(position = position),
                 title = "Sua localização",
                 snippet = "Você está",
+                draggable = true,
 
             )
         }
