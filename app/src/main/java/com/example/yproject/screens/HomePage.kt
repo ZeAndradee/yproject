@@ -1,5 +1,6 @@
 package com.example.yproject.screens
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,27 +39,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.createBitmap
 import com.example.yproject.utils.googleMaps.checkAndRequestLocationPermission
 import com.example.yproject.utils.googleMaps.getLastLocation
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 
 data class BottomNavMenu(
-    val Title: String,
-    val SelectedIcon: ImageVector,
-    val UnselectedIcon: ImageVector,
-    var NotificationBadge: MutableState<Int?>? = null,
-    val Route: String,
+    val title: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+    var notificationBadge: MutableState<Int?>? = null,
+    val route: String,
 )
-
 
 @Composable
 fun HomePage(){
@@ -67,7 +70,7 @@ fun HomePage(){
     val activity = context as Activity
     var currentPosition by remember { mutableStateOf<LatLng?>(null) }
     var isLocationObtained by remember { mutableStateOf(false) }
-
+    var markers by remember { mutableStateOf(listOf<LatLng>()) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             LatLng(-8.11799711959781, -34.91363173260206), // Use a posição padrão se a posição atual ainda não estiver disponível
@@ -104,30 +107,30 @@ fun HomePage(){
 
     val items = listOf(
         BottomNavMenu(
-            Title = "Home",
-            SelectedIcon = Icons.Filled.Home,
-            UnselectedIcon = Icons.Outlined.Home,
-            Route = "Home"
+            title = "Home",
+            selectedIcon = Icons.Filled.Home,
+            unselectedIcon = Icons.Outlined.Home,
+            route = "Home"
         ),
         BottomNavMenu(
-            Title = "Comunidade",
-            SelectedIcon = Icons.Filled.Notifications,
-            UnselectedIcon = Icons.Outlined.Notifications,
-            Route = "Comunidade",
-            NotificationBadge = remember { mutableStateOf(13) }
+            title = "Comunidade",
+            selectedIcon = Icons.Filled.Notifications,
+            unselectedIcon = Icons.Outlined.Notifications,
+            route = "Comunidade",
+            notificationBadge = remember { mutableStateOf(13) }
 
         ),
         BottomNavMenu(
-            Title = "Salvos",
-            SelectedIcon = Icons.Default.Favorite,
-            UnselectedIcon = Icons.Default.FavoriteBorder,
-            Route = "Saved"
+            title = "Salvos",
+            selectedIcon = Icons.Default.Favorite,
+            unselectedIcon = Icons.Default.FavoriteBorder,
+            route = "Saved"
         ),
         BottomNavMenu(
-            Title = "Perfil",
-            SelectedIcon = Icons.Default.Person,
-            UnselectedIcon = Icons.Outlined.Person,
-            Route = "profile"
+            title = "Perfil",
+            selectedIcon = Icons.Default.Person,
+            unselectedIcon = Icons.Outlined.Person,
+            route = "profile"
         ),
     )
     var selectedIndexItem by rememberSaveable {
@@ -144,25 +147,25 @@ fun HomePage(){
                         onClick = {
                             selectedIndexItem = index
                             if (index == 1){
-                                item.NotificationBadge?.value = null
+                                item.notificationBadge?.value = null
                             }
                         },
                         label = {
-                            Text(text = item.Title)
+                            Text(text = item.title)
                         },
                         icon = {
                             BadgedBox(
                                 badge = {
-                                    if (item.NotificationBadge?.value != null){
+                                    if (item.notificationBadge?.value != null){
                                         Badge{
-                                            Text(text = item.NotificationBadge?.value.toString())
+                                            Text(text = item.notificationBadge?.value.toString())
                                         }
                                     }
                                 }
                             ) {
                                 Icon(
-                                    imageVector = if (index == selectedIndexItem) item.SelectedIcon else item.UnselectedIcon,
-                                    contentDescription = item.Title,
+                                    imageVector = if (index == selectedIndexItem) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.title,
                                 )
                             }
                         })
@@ -170,7 +173,7 @@ fun HomePage(){
             }
         },
         floatingActionButton = {
-            Column (modifier = Modifier ){
+            Column (modifier = Modifier ) {
                 FloatingActionButton(onClick = {
                     activity.getLastLocation { position ->
                         currentPosition = position
@@ -183,20 +186,34 @@ fun HomePage(){
                         }
                     }
                 }, shape = RoundedCornerShape(50)) {
-                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Adicionar Alertas")
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Adicionar Alertas"
+                    )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                FloatingActionButton(onClick = { /*TODO*/ }) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Adicionar Alertas")
+                FloatingActionButton(onClick = {
+                    currentPosition?.let {
+                        markers = markers + it
+                    }
+
+                }, shape = RoundedCornerShape(50)) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Adicionar Alertas"
+                    )
                 }
             }
+
         },
         content = { paddingValues ->
             GoogleMapView(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                cameraPositionState = cameraPositionState
+                cameraPositionState = cameraPositionState,
+                currentPosition = currentPosition,
+                markers = markers,
             ){checkAndRequestLocationPermission(context)
                 }
         }
@@ -205,7 +222,9 @@ fun HomePage(){
 @Composable
 fun GoogleMapView(
     modifier: Modifier = Modifier,
+    markers: List<LatLng>,
     cameraPositionState: CameraPositionState,
+    currentPosition: LatLng?,
     onMapLoaded: () -> Unit = {},
 ){
 
@@ -227,5 +246,15 @@ fun GoogleMapView(
         uiSettings = mapUiSettings,
         properties = mapProperties,
         cameraPositionState = cameraPositionState,
-    )
+    ){
+        markers.forEach { position ->
+            Marker(
+                state = rememberMarkerState(position = position),
+                draggable = true,
+                title = "Sua localização",
+                snippet = "Você está",
+
+            )
+        }
+    }
 }
