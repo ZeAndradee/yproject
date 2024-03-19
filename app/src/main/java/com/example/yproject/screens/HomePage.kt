@@ -250,7 +250,6 @@ fun GoogleMapView(
         markers.forEach { position ->
             Marker(
                 state = rememberMarkerState(position = position),
-                draggable = true,
                 title = "Sua localização",
                 snippet = "Você está",
 
