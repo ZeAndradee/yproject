@@ -1,5 +1,6 @@
 package com.example.yproject.screens
 import android.app.Activity
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.example.yproject.R
 import com.example.yproject.utils.googleMaps.checkAndRequestLocationPermission
 import com.example.yproject.utils.googleMaps.getLastLocation
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -56,6 +59,8 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class BottomNavMenu(
     val title: String,
@@ -63,6 +68,12 @@ data class BottomNavMenu(
     val unselectedIcon: ImageVector,
     var notificationBadge: MutableState<Int?>? = null,
     val route: String,
+)
+
+data class Alerts(
+    val type: String,
+    val description: String,
+    val position: LatLng,
 )
 
 @Composable
@@ -73,6 +84,17 @@ fun HomePage(){
     var currentPosition by remember { mutableStateOf<LatLng?>(null) }
     var isLocationObtained by remember { mutableStateOf(false) }
     var markers by remember { mutableStateOf(listOf<LatLng>()) }
+
+    var Alerts by remember {
+        mutableStateOf(listOf<Alerts>())
+    }
+
+    suspend fun getAlertIcon(context: Context, iconName: String): BitmapDescriptor = withContext(
+        Dispatchers.Main) {
+        val resourceId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+        BitmapDescriptorFactory.fromResource(resourceId)
+    }
+
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             LatLng(-8.11799711959781, -34.91363173260206),
@@ -199,14 +221,19 @@ fun HomePage(){
                 //FloatingActionButton add alerts
                 FloatingActionButton(onClick = {
                     var repeatPosition = false
-                    markers.forEach { position ->
-                        if (currentPosition == position){
+                    Alerts.forEach { alert ->
+                        if (currentPosition == alert.position){
                             repeatPosition = true
                         }
                     }
                     if (!repeatPosition){
                         currentPosition?.let {
-                            markers = markers + it
+                            val newAlert = Alerts(
+                                type = "HOLE",
+                                description = "Alerta de buraco",
+                                position = it
+                            )
+                            Alerts = Alerts + newAlert
                         }
                     }else{
                         Toast.makeText(context, "Não é possivel adicionar um alerta nessa posição.", Toast.LENGTH_SHORT).show()
@@ -214,6 +241,32 @@ fun HomePage(){
                 }, shape = RoundedCornerShape(50)) {
                     Icon(
                         imageVector = Icons.Default.Edit,
+                        contentDescription = "Adicionar Alertas"
+                    )
+                }
+
+                FloatingActionButton(onClick = {
+                    var repeatPosition = false
+                    Alerts.forEach { alert ->
+                        if (currentPosition == alert.position){
+                            repeatPosition = true
+                        }
+                    }
+                    if (!repeatPosition){
+                        currentPosition?.let {
+                            val newAlert = Alerts(
+                                type = "FLOOD",
+                                description = "Alerta de alagamento",
+                                position = it
+                            )
+                            Alerts = Alerts + newAlert
+                        }
+                    }else{
+                        Toast.makeText(context, "Não é possivel adicionar um alerta nessa posição.", Toast.LENGTH_SHORT).show()
+                    }
+                }, shape = RoundedCornerShape(50)) {
+                    Icon(
+                        imageVector = Icons.Default.AddCircle,
                         contentDescription = "Adicionar Alertas"
                     )
                 }
@@ -225,9 +278,9 @@ fun HomePage(){
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                markers = markers,
+                alerts = Alerts,
+                alertIcons = alertIcons,
                 cameraPositionState = cameraPositionState,
-
             ){checkAndRequestLocationPermission(context)
                 }
         }
@@ -236,7 +289,8 @@ fun HomePage(){
 @Composable
 fun GoogleMapView(
     modifier: Modifier = Modifier,
-    markers: List<LatLng>,
+    alerts: List<Alerts>,
+    alertIcons: Map<String, BitmapDescriptor>,
     cameraPositionState: CameraPositionState,
     onMapLoaded: () -> Unit = {},
 ){
@@ -261,15 +315,14 @@ fun GoogleMapView(
         cameraPositionState = cameraPositionState,
     ){
 
-        markers.forEach { position ->
+        alerts.forEach { alert ->
             Marker(
-                state = rememberMarkerState(position = position),
-                title = "Sua localização",
+                state = rememberMarkerState(position = alert.position),
+                title = alert.type,
                 snippet = "Você está",
                 draggable = true,
-                icon = BitmapDescriptorFactory.fromResource(com.google.maps.android.compose.utils.R.drawable.common_full_open_on_phone)
+                icon = alertIcons[alert.type],
             )
         }
     }
 }
-+++.
