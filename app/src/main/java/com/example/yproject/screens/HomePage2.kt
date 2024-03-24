@@ -1,6 +1,5 @@
 package com.example.yproject.screens
 import android.app.Activity
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -42,10 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.yproject.R
 import com.example.yproject.utils.googleMaps.checkAndRequestLocationPermission
 import com.example.yproject.utils.googleMaps.getLastLocation
-import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -57,10 +53,8 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-data class BottomNavMenu(
+data class BottomNavMenu2(
     val title: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
@@ -68,31 +62,14 @@ data class BottomNavMenu(
     val route: String,
 )
 
-data class Alerts(
-    val type: String,
-    val description: String,
-    val position: LatLng,
-    val icon: BitmapDescriptor? = null
-)
-
 @Composable
-fun HomePage(){
+fun HomePage2(){
 
     val context = LocalContext.current
     val activity = context as Activity
     var currentPosition by remember { mutableStateOf<LatLng?>(null) }
     var isLocationObtained by remember { mutableStateOf(false) }
     var markers by remember { mutableStateOf(listOf<LatLng>()) }
-
-    var Alerts by remember {
-        mutableStateOf(listOf<Alerts>())
-    }
-
-    /*val alertIcons = mapOf(
-        "FLOOD" to BitmapDescriptorFactory.fromResource(R.drawable.flood_icon),
-        "HOLE" to BitmapDescriptorFactory.fromResource(R.drawable.hole_icon)
-    )*/
-
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             LatLng(-8.11799711959781, -34.91363173260206),
@@ -219,20 +196,14 @@ fun HomePage(){
                 //FloatingActionButton add alerts
                 FloatingActionButton(onClick = {
                     var repeatPosition = false
-                    Alerts.forEach { alert ->
-                        if (currentPosition == alert.position){
+                    markers.forEach { position ->
+                        if (currentPosition == position){
                             repeatPosition = true
                         }
                     }
                     if (!repeatPosition){
                         currentPosition?.let {
-                            val newAlert = Alerts(
-                                type = "HOLE",
-                                description = "Alerta de buraco",
-                                position = it,
-                                icon = BitmapDescriptorFactory.fromResource(com.google.maps.android.compose.utils.R.drawable.amu_bubble_mask)
-                            )
-                            Alerts = Alerts + newAlert
+                            markers = markers + it
                         }
                     }else{
                         Toast.makeText(context, "Não é possivel adicionar um alerta nessa posição.", Toast.LENGTH_SHORT).show()
@@ -240,33 +211,6 @@ fun HomePage(){
                 }, shape = RoundedCornerShape(50)) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Adicionar Alertas"
-                    )
-                }
-
-                FloatingActionButton(onClick = {
-                    var repeatPosition = false
-                    Alerts.forEach { alert ->
-                        if (currentPosition == alert.position){
-                            repeatPosition = true
-                        }
-                    }
-                    if (!repeatPosition){
-                        currentPosition?.let {
-                            val newAlert = Alerts(
-                                type = "FLOOD",
-                                description = "Alerta de alagamento",
-                                position = it,
-                                icon = BitmapDescriptorFactory.fromResource(com.google.maps.android.compose.utils.R.drawable.common_full_open_on_phone)
-                            )
-                            Alerts = Alerts + newAlert
-                        }
-                    }else{
-                        Toast.makeText(context, "Não é possivel adicionar um alerta nessa posição.", Toast.LENGTH_SHORT).show()
-                    }
-                }, shape = RoundedCornerShape(50)) {
-                    Icon(
-                        imageVector = Icons.Default.AddCircle,
                         contentDescription = "Adicionar Alertas"
                     )
                 }
@@ -278,17 +222,18 @@ fun HomePage(){
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                alerts = Alerts,
+                markers = markers,
                 cameraPositionState = cameraPositionState,
-            ){checkAndRequestLocationPermission(context)
-                }
+
+                ){checkAndRequestLocationPermission(context)
+            }
         }
     )
 }
 @Composable
 fun GoogleMapView(
     modifier: Modifier = Modifier,
-    alerts: List<Alerts>,
+    markers: List<LatLng>,
     cameraPositionState: CameraPositionState,
     onMapLoaded: () -> Unit = {},
 ){
@@ -304,6 +249,7 @@ fun GoogleMapView(
         )
     }
 
+
     GoogleMap(
         modifier = modifier,
         onMapLoaded = onMapLoaded,
@@ -311,14 +257,15 @@ fun GoogleMapView(
         properties = mapProperties,
         cameraPositionState = cameraPositionState,
     ){
-            alerts.forEach { alert ->
-                Marker(
-                    state = rememberMarkerState(position = alert.position),
-                    title = alert.type,
-                    snippet = "Você está",
-                    draggable = true,
-                    icon = alert.icon,
-                )
-            }
+
+        markers.forEach { position ->
+            Marker(
+                state = rememberMarkerState(position = position),
+                title = "Sua localização",
+                snippet = "Você está",
+                draggable = true,
+                icon = BitmapDescriptorFactory.fromResource(com.google.maps.android.compose.utils.R.drawable.common_full_open_on_phone)
+            )
+        }
     }
 }
