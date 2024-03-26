@@ -88,10 +88,6 @@ fun HomePage(){
         mutableStateOf(listOf<Alerts>())
     }
 
-    val alertIcons = mapOf(
-        "FLOOD" to BitmapDescriptorFactory.fromResource(com.google.maps.android.compose.utils.R.drawable.common_full_open_on_phone),
-        "HOLE" to BitmapDescriptorFactory.fromResource(com.google.maps.android.compose.utils.R.drawable.amu_bubble_mask)
-    )
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
